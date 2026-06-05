@@ -2564,7 +2564,12 @@ button:disabled {
   }
 
   .placement-grid-row.is-editing .placement-row-summary {
+    order: 20;
     margin-bottom: 0;
+  }
+
+  .placement-grid-row.is-editing .input-cell {
+    order: 1;
   }
 
   .row-action-cell {
