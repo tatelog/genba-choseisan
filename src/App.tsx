@@ -5,7 +5,6 @@ import {
   ChevronLeft,
   ChevronRight,
   CircleAlert,
-  Clock,
   Lock,
   LogIn,
   LogOut,
@@ -1058,11 +1057,6 @@ function MainApp({ onLogout }: MainAppProps) {
               <span>候補日</span>
               <strong>{activeEvent.candidates.length} 件</strong>
             </button>
-            <div className="summary-item">
-              <Clock size={20} />
-              <span>回答期限</span>
-              <strong>{activeEvent.due}</strong>
-            </div>
             <div className="summary-item accent">
               <Check size={20} />
               <span>最有力</span>
