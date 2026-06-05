@@ -570,7 +570,9 @@ function MainApp({ onLogout }: MainAppProps) {
   const areaZoneOptions = getAreaZoneOptions(visibleStakeholderMaster, zoneAssignments, assignmentRoles);
   const activeWorkMenuLabel = workMenus.find((menu) => menu.id === activeWorkMenu)?.label ?? "";
   const pageTitle = activeWorkMenuLabel;
-  const hasInvalidPlacementRows = placementRows.some((row) => invalidPlacementRows[row.id] && isPlacementRowIncomplete(row));
+  const hasInvalidPlacementRows = placementRows.some(
+    (row) => invalidPlacementRows[row.id] && isPlacementPlanIncomplete(row, getActiveSchedule(placementSchedules, row.id))
+  );
   const placementStats = {
     volume: placementRows.reduce((sum, row) => sum + Number(row.concreteVolume || 0), 0),
     floorArea: placementRows.reduce((sum, row) => sum + Number(row.floorArea || 0), 0),
@@ -939,8 +941,9 @@ function MainApp({ onLogout }: MainAppProps) {
 
   function togglePlacementRowEdit(rowId: string) {
     const row = placementRows.find((placementRow) => placementRow.id === rowId);
+    const activeSchedule = getActiveSchedule(placementSchedules, rowId);
     const isEditing = Boolean(editingPlacementRows[rowId]);
-    if (isEditing && row && isPlacementRowIncomplete(row)) {
+    if (isEditing && row && isPlacementPlanIncomplete(row, activeSchedule)) {
       setInvalidPlacementRows((current) => ({ ...current, [rowId]: true }));
       return;
     }
@@ -957,6 +960,14 @@ function MainApp({ onLogout }: MainAppProps) {
   function updatePlacementScheduleDate(rowId: string, value: string) {
     if (!value) return;
     schedulePlacementRow(rowId, value);
+    const row = placementRows.find((placementRow) => placementRow.id === rowId);
+    if (row && !isPlacementPlanIncomplete(row, { rowId, date: value, status: "draft", updatedAt: "" })) {
+      setInvalidPlacementRows((current) => {
+        const next = { ...current };
+        delete next[rowId];
+        return next;
+      });
+    }
   }
 
   function deletePlacementRow(rowId: string) {
@@ -995,7 +1006,7 @@ function MainApp({ onLogout }: MainAppProps) {
     const currentRow = placementRows.find((row) => row.id === rowId);
     if (currentRow) {
       const nextRow = { ...currentRow, [field]: value };
-      if (!isPlacementRowIncomplete(nextRow)) {
+      if (!isPlacementPlanIncomplete(nextRow, getActiveSchedule(placementSchedules, rowId))) {
         setInvalidPlacementRows((current) => {
           const next = { ...current };
           delete next[rowId];
@@ -1412,7 +1423,7 @@ function MainApp({ onLogout }: MainAppProps) {
 
             {hasInvalidPlacementRows && (
               <div className="error-banner">
-                未入力の必須項目があります。工区、階数、数量、床面積、配合、床仕上げを確認してください。
+                未入力の必須項目があります。希望日、工区、階数、数量、床面積、配合、床仕上げを確認してください。
               </div>
             )}
 
@@ -1420,7 +1431,7 @@ function MainApp({ onLogout }: MainAppProps) {
               <div className="placement-grid-wrap">
                 <div className="placement-grid">
                   <div className="placement-grid-row placement-grid-head">
-                    <div>日程</div>
+                    <div>希望日</div>
                     <div>工区</div>
                     <div>枝番</div>
                     <div>階数</div>
@@ -1492,8 +1503,8 @@ function MainApp({ onLogout }: MainAppProps) {
                           </button>
                         </div>
                       </div>
-                      <label className="input-cell schedule-date-cell">
-                        <span>日程</span>
+                      <label className={`input-cell required schedule-date-cell ${showRowErrors && !activeSchedule?.date ? "error" : ""}`}>
+                        <span>希望日</span>
                         <input
                           disabled={!isRowEditing || activeSchedule?.status === "confirmed"}
                           onChange={(event) => updatePlacementScheduleDate(row.id, event.target.value)}
@@ -2340,6 +2351,6 @@ function isMissing(value: string) {
   return !value.trim();
 }
 
-function isPlacementRowIncomplete(row: ConcretePlacementRow) {
-  return [row.zone, row.floor, row.concreteVolume, row.floorArea, row.mix, row.floorFinish].some(isMissing);
+function isPlacementPlanIncomplete(row: ConcretePlacementRow, schedule?: PlacementSchedule) {
+  return [schedule?.date ?? "", row.zone, row.floor, row.concreteVolume, row.floorArea, row.mix, row.floorFinish].some(isMissing);
 }
