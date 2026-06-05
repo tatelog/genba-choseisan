@@ -1139,14 +1139,6 @@ function MainApp({ onLogout }: MainAppProps) {
                       {row.concreteVolume || "-"}m3 / {row.floorArea || "-"}m2
                     </span>
                   </div>
-                  <dl className="placement-tile-popover">
-                    <div><dt>状態</dt><dd>{activeSchedule ? scheduleStatusLabels[activeSchedule.status] : "未設定"}</dd></div>
-                    <div><dt>配合</dt><dd>{row.mix || "未設定"}</dd></div>
-                    <div><dt>床仕上げ</dt><dd>{row.floorFinish || "未設定"}</dd></div>
-                    <div><dt>台数</dt><dd>{row.mixersPerHour || "-"} 台/h</dd></div>
-                    <div><dt>配管</dt><dd>{row.hasPipe ? `${row.pipeLength || "-"} m` : "なし"}</dd></div>
-                    <div><dt>2台付け</dt><dd>{row.doubleTruck}</dd></div>
-                  </dl>
                 </article>
               ))}
             </div>

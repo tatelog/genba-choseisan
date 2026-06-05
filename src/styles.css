@@ -486,41 +486,6 @@ button:disabled {
   font-weight: 700;
 }
 
-.candidate-placement-card dl {
-  display: grid;
-  gap: 3px;
-  margin: 0;
-  color: #60766f;
-  font-size: 11px;
-}
-
-.candidate-placement-card dl div {
-  display: flex;
-  justify-content: space-between;
-  gap: 8px;
-}
-
-.candidate-placement-card dt,
-.candidate-placement-card dd {
-  margin: 0;
-}
-
-.candidate-placement-card dd {
-  color: #22332e;
-  font-weight: 700;
-  text-align: right;
-}
-
-.candidate-placement-card .placement-tile-popover div {
-  display: grid;
-  grid-template-columns: 72px minmax(0, 1fr);
-  justify-content: initial;
-}
-
-.candidate-placement-card .placement-tile-popover dd {
-  text-align: left;
-}
-
 .content-grid {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 360px;
