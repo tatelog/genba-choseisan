@@ -6,7 +6,6 @@ import {
   Lock,
   LogIn,
   LogOut,
-  Mail,
   Menu,
   Minus,
   Plus,
@@ -2076,12 +2075,6 @@ function MainApp({ onLogout }: MainAppProps) {
                 <p className="eyebrow">回答入力</p>
                 <h2>{selectedMemberInfo.company}</h2>
               </div>
-              <Mail size={18} />
-            </div>
-
-            <div className="contact-line">
-              <span>{selectedMemberInfo.role}</span>
-              <span>{selectedMemberInfo.contact}</span>
             </div>
 
             <div className="response-list">
