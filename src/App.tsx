@@ -803,14 +803,19 @@ function MainApp({ onLogout }: MainAppProps) {
     setConfirmedMovePrompt(null);
   }
 
-  function updateMark(candidateId: string, mark: Mark) {
+  function updateMemberMark(memberId: string, candidateId: string, mark: Mark) {
     setDraftResponses((current) => ({
       ...current,
-      [selectedMemberInfo.id]: {
-        ...current[selectedMemberInfo.id],
+      [memberId]: {
+        ...current[memberId],
         [candidateId]: mark,
       },
     }));
+    setSelectedMember(memberId);
+  }
+
+  function updateMark(candidateId: string, mark: Mark) {
+    updateMemberMark(selectedMemberInfo.id, candidateId, mark);
   }
 
   const responseEvent = { ...activeEvent, members: activeMembers, responses: draftResponses };
@@ -1927,9 +1932,19 @@ function MainApp({ onLogout }: MainAppProps) {
                     const mark = responseEvent.responses[member.id]?.[candidate.id] ?? "none";
                     return (
                       <div className="mark-cell" role="cell" key={candidate.id}>
-                        <span className={`mark mark-${mark}`} title={markText[mark]}>
-                          {markLabels[mark]}
-                        </span>
+                        <div className="mark-choice" aria-label={`${member.company} ${candidate.label} の回答`}>
+                          {(["ok", "maybe", "ng"] as Mark[]).map((choice) => (
+                            <button
+                              className={`mark mark-${choice} ${mark === choice ? "active" : ""}`}
+                              key={choice}
+                              onClick={() => updateMemberMark(member.id, candidate.id, choice)}
+                              title={markText[choice]}
+                              type="button"
+                            >
+                              {markLabels[choice]}
+                            </button>
+                          ))}
+                        </div>
                       </div>
                     );
                   })}
