@@ -258,6 +258,7 @@ button:disabled {
   background: #2f7d68;
   color: #fff;
   font-weight: 700;
+  white-space: nowrap;
 }
 
 .construction-switch {
@@ -425,6 +426,7 @@ button:disabled {
   display: flex;
   gap: 10px;
   align-items: center;
+  flex-wrap: nowrap;
 }
 
 .icon-button {
@@ -2601,5 +2603,31 @@ button:disabled {
 
   .modal-actions {
     display: grid;
+  }
+}
+
+@media (min-width: 721px) and (max-width: 1040px) {
+  .topbar {
+    align-items: flex-start;
+  }
+
+  .topbar-actions {
+    align-items: center;
+    flex-direction: row;
+    justify-content: flex-end;
+    max-width: 300px;
+  }
+
+  .topbar-actions .primary-button,
+  .topbar-actions .secondary-button {
+    gap: 5px;
+    min-width: 0;
+    padding: 0 10px;
+    font-size: 13px;
+    line-height: 1;
+  }
+
+  .topbar-actions .icon-button {
+    flex: 0 0 42px;
   }
 }
