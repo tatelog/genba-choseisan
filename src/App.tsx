@@ -567,9 +567,8 @@ function MainApp({ onLogout }: MainAppProps) {
   const visibleStakeholderMaster = stakeholderMaster.filter((member) => member.works.includes(activeWorkType));
   const assignmentRoles = assignmentRolesByWork[activeWorkType];
   const areaZoneOptions = getAreaZoneOptions(visibleStakeholderMaster, zoneAssignments, assignmentRoles);
-  const activeConstructionLabel = eventSwitchLabels[activeEvent.id] ?? activeEvent.kind;
   const activeWorkMenuLabel = workMenus.find((menu) => menu.id === activeWorkMenu)?.label ?? "";
-  const pageTitle = [activeConstructionLabel, activeWorkMenuLabel].filter(Boolean).join(" / ");
+  const pageTitle = activeWorkMenuLabel;
   const placementStats = {
     volume: placementRows.reduce((sum, row) => sum + Number(row.concreteVolume || 0), 0),
     floorArea: placementRows.reduce((sum, row) => sum + Number(row.floorArea || 0), 0),
