@@ -2500,11 +2500,17 @@ button:disabled {
 
   .placement-tile-actions {
     gap: 5px;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    justify-content: flex-end;
+    width: 100%;
   }
 
   .row-confirm-button,
   .row-reschedule-button,
-  .row-dummy-button {
+  .row-dummy-button,
+  .placement-tile-actions .row-edit-button {
+    flex: 0 0 auto;
     min-height: 32px;
     padding: 0 9px;
     font-size: 12px;
