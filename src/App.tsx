@@ -551,6 +551,7 @@ function MainApp({ onLogout }: MainAppProps) {
   const [draftMovePrompt, setDraftMovePrompt] = useState<DraftMovePrompt | null>(null);
   const [editingPlacementRows, setEditingPlacementRows] = useState<Record<string, boolean>>({});
   const [isCandidatePlacementListOpen, setIsCandidatePlacementListOpen] = useState(false);
+  const [lastMemberTap, setLastMemberTap] = useState<{ id: string; at: number } | null>(null);
 
   const activeEvent = events.find((event) => event.id === activeId) ?? events[0];
   const activeMembers = membersByEvent[activeEvent.id] ?? activeEvent.members;
@@ -668,6 +669,17 @@ function MainApp({ onLogout }: MainAppProps) {
     setActiveWorkMenu("quantity");
     setCalendarMonthOffset(0);
     setIsCandidatePlacementListOpen(false);
+  }
+
+  function handleMemberTap(memberId: string) {
+    const now = Date.now();
+    setSelectedMember(memberId);
+    if (lastMemberTap?.id === memberId && now - lastMemberTap.at < 420) {
+      setIsCandidatePlacementListOpen(true);
+      setLastMemberTap(null);
+      return;
+    }
+    setLastMemberTap({ id: memberId, at: now });
   }
 
   function toggleSaturdayClosedWeek(week: number) {
@@ -1047,16 +1059,11 @@ function MainApp({ onLogout }: MainAppProps) {
         {activeWorkMenu === "adjustment" && (
           <>
           <section className="summary-grid">
-            <button
-              aria-expanded={isCandidatePlacementListOpen}
-              className="summary-item summary-button"
-              onClick={() => setIsCandidatePlacementListOpen((isOpen) => !isOpen)}
-              type="button"
-            >
+            <div className="summary-item">
               <CalendarDays size={20} />
               <span>候補日</span>
               <strong>{activeEvent.candidates.length} 件</strong>
-            </button>
+            </div>
             <div className="summary-item accent">
               <Check size={20} />
               <span>最有力</span>
@@ -1067,7 +1074,7 @@ function MainApp({ onLogout }: MainAppProps) {
             <section className="panel candidate-placement-panel" aria-label="候補日に紐づく打設箇所">
               <div className="panel-heading compact">
                 <div>
-                  <p className="eyebrow">候補日対象</p>
+                  <p className="eyebrow">関係者確認</p>
                   <h2>打設箇所リスト</h2>
                 </div>
                 <span className="status-pill">{candidatePlacementList.length} 箇所</span>
@@ -1826,7 +1833,8 @@ function MainApp({ onLogout }: MainAppProps) {
                 <div className="matrix-row" role="row" key={member.id} style={matrixColumns(activeEvent)}>
                   <button
                     className={`member-cell ${member.id === selectedMember ? "selected" : ""}`}
-                    onClick={() => setSelectedMember(member.id)}
+                    onClick={() => handleMemberTap(member.id)}
+                    onDoubleClick={() => setIsCandidatePlacementListOpen(true)}
                   >
                     <strong>{member.company}</strong>
                     <span>{member.role}</span>
