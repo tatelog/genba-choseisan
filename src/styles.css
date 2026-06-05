@@ -939,7 +939,7 @@ button:disabled {
 
 .view-toggle {
   display: grid;
-  grid-template-columns: repeat(2, 62px);
+  grid-template-columns: repeat(2, 72px);
   height: 36px;
   overflow: hidden;
   border: 1px solid #cad6d0;
@@ -952,10 +952,12 @@ button:disabled {
   align-items: center;
   justify-content: center;
   gap: 4px;
+  min-width: 0;
   border: 0;
   border-right: 1px solid #cad6d0;
   background: #fff;
   color: #33433d;
+  white-space: nowrap;
 }
 
 .view-toggle button:last-child {
