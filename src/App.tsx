@@ -555,6 +555,7 @@ function MainApp({ onLogout }: MainAppProps) {
   const [draftMovePrompt, setDraftMovePrompt] = useState<DraftMovePrompt | null>(null);
   const [confirmStartTimePrompt, setConfirmStartTimePrompt] = useState<ConfirmStartTimePrompt | null>(null);
   const [editingPlacementRows, setEditingPlacementRows] = useState<Record<string, boolean>>({});
+  const [invalidPlacementRows, setInvalidPlacementRows] = useState<Record<string, boolean>>({});
 
   const activeEvent = events.find((event) => event.id === activeId) ?? events[0];
   const activeMembers = membersByEvent[activeEvent.id] ?? activeEvent.members;
@@ -569,6 +570,7 @@ function MainApp({ onLogout }: MainAppProps) {
   const areaZoneOptions = getAreaZoneOptions(visibleStakeholderMaster, zoneAssignments, assignmentRoles);
   const activeWorkMenuLabel = workMenus.find((menu) => menu.id === activeWorkMenu)?.label ?? "";
   const pageTitle = activeWorkMenuLabel;
+  const hasInvalidPlacementRows = placementRows.some((row) => invalidPlacementRows[row.id] && isPlacementRowIncomplete(row));
   const placementStats = {
     volume: placementRows.reduce((sum, row) => sum + Number(row.concreteVolume || 0), 0),
     floorArea: placementRows.reduce((sum, row) => sum + Number(row.floorArea || 0), 0),
@@ -925,12 +927,30 @@ function MainApp({ onLogout }: MainAppProps) {
 
     setPlacementRowsByEvent((current) => ({
       ...current,
-      [activeEvent.id]: [...(current[activeEvent.id] ?? []), nextRow],
+      [activeEvent.id]: [nextRow, ...(current[activeEvent.id] ?? [])],
     }));
     setEditingPlacementRows((current) => ({ ...current, [nextRowId]: true }));
+    setInvalidPlacementRows((current) => {
+      const next = { ...current };
+      delete next[nextRowId];
+      return next;
+    });
   }
 
   function togglePlacementRowEdit(rowId: string) {
+    const row = placementRows.find((placementRow) => placementRow.id === rowId);
+    const isEditing = Boolean(editingPlacementRows[rowId]);
+    if (isEditing && row && isPlacementRowIncomplete(row)) {
+      setInvalidPlacementRows((current) => ({ ...current, [rowId]: true }));
+      return;
+    }
+    if (isEditing) {
+      setInvalidPlacementRows((current) => {
+        const next = { ...current };
+        delete next[rowId];
+        return next;
+      });
+    }
     setEditingPlacementRows((current) => ({ ...current, [rowId]: !current[rowId] }));
   }
 
@@ -954,6 +974,11 @@ function MainApp({ onLogout }: MainAppProps) {
       delete next[rowId];
       return next;
     });
+    setInvalidPlacementRows((current) => {
+      const next = { ...current };
+      delete next[rowId];
+      return next;
+    });
   }
 
   function updatePlacementRow(
@@ -967,6 +992,17 @@ function MainApp({ onLogout }: MainAppProps) {
         row.id === rowId ? { ...row, [field]: value } : row
       ),
     }));
+    const currentRow = placementRows.find((row) => row.id === rowId);
+    if (currentRow) {
+      const nextRow = { ...currentRow, [field]: value };
+      if (!isPlacementRowIncomplete(nextRow)) {
+        setInvalidPlacementRows((current) => {
+          const next = { ...current };
+          delete next[rowId];
+          return next;
+        });
+      }
+    }
   }
 
   function stepPlacementNumber(rowId: string, field: "concreteVolume" | "floorArea", delta: number) {
@@ -1374,7 +1410,7 @@ function MainApp({ onLogout }: MainAppProps) {
               </div>
             </div>
 
-            {placementStats.requiredMissing > 0 && (
+            {hasInvalidPlacementRows && (
               <div className="error-banner">
                 未入力の必須項目があります。工区、階数、数量、床面積、配合、床仕上げを確認してください。
               </div>
@@ -1399,6 +1435,7 @@ function MainApp({ onLogout }: MainAppProps) {
                   </div>
                   {placementRows.map((row) => {
                     const isRowEditing = Boolean(editingPlacementRows[row.id]);
+                    const showRowErrors = Boolean(invalidPlacementRows[row.id]);
                     const activeSchedule = getActiveSchedule(placementSchedules, row.id);
                     const scheduleLabel =
                       activeSchedule?.status === "confirmed"
@@ -1464,7 +1501,7 @@ function MainApp({ onLogout }: MainAppProps) {
                           value={activeSchedule?.date ?? ""}
                         />
                       </label>
-                      <label className={`input-cell required ${isMissing(row.zone) ? "error" : ""}`}>
+                      <label className={`input-cell required ${showRowErrors && isMissing(row.zone) ? "error" : ""}`}>
                         <span>工区</span>
                         <div className="select-shell">
                           <select
@@ -1488,7 +1525,7 @@ function MainApp({ onLogout }: MainAppProps) {
                           placeholder="なし"
                         />
                       </label>
-                      <label className={`input-cell required compact ${isMissing(row.floor) ? "error" : ""}`}>
+                      <label className={`input-cell required compact ${showRowErrors && isMissing(row.floor) ? "error" : ""}`}>
                         <span>階数</span>
                         <div className="select-shell">
                           <select
@@ -1502,7 +1539,7 @@ function MainApp({ onLogout }: MainAppProps) {
                           </select>
                         </div>
                       </label>
-                      <label className={`input-cell required ${isMissing(row.concreteVolume) ? "error" : ""}`}>
+                      <label className={`input-cell required ${showRowErrors && isMissing(row.concreteVolume) ? "error" : ""}`}>
                         <span>数量</span>
                         <div className="stepper">
                           <button
@@ -1529,7 +1566,7 @@ function MainApp({ onLogout }: MainAppProps) {
                           </button>
                         </div>
                       </label>
-                      <label className={`input-cell required ${isMissing(row.floorArea) ? "error" : ""}`}>
+                      <label className={`input-cell required ${showRowErrors && isMissing(row.floorArea) ? "error" : ""}`}>
                         <span>床面積</span>
                         <div className="stepper">
                           <button
@@ -1556,7 +1593,7 @@ function MainApp({ onLogout }: MainAppProps) {
                           </button>
                         </div>
                       </label>
-                      <label className={`input-cell required ${isMissing(row.mix) ? "error" : ""}`}>
+                      <label className={`input-cell required ${showRowErrors && isMissing(row.mix) ? "error" : ""}`}>
                         <span>配合</span>
                         <div className="select-shell">
                           <select
@@ -1579,7 +1616,7 @@ function MainApp({ onLogout }: MainAppProps) {
                             inputMode="numeric"
                           />
                       </label>
-                      <label className={`input-cell required ${isMissing(row.floorFinish) ? "error" : ""}`}>
+                      <label className={`input-cell required ${showRowErrors && isMissing(row.floorFinish) ? "error" : ""}`}>
                         <span>床仕上げ</span>
                         <div className="select-shell">
                           <select
@@ -2301,4 +2338,8 @@ function getZoneOptions(count: number, notation: ZoneNotation) {
 
 function isMissing(value: string) {
   return !value.trim();
+}
+
+function isPlacementRowIncomplete(row: ConcretePlacementRow) {
+  return [row.zone, row.floor, row.concreteVolume, row.floorArea, row.mix, row.floorFinish].some(isMissing);
 }
