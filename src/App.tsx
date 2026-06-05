@@ -17,7 +17,6 @@ import {
   Send,
   Table2,
   Truck,
-  Users,
   X,
 } from "lucide-react";
 import { useEffect, useMemo, useState, type CSSProperties, type FormEvent } from "react";
@@ -1059,11 +1058,6 @@ function MainApp({ onLogout }: MainAppProps) {
               <span>候補日</span>
               <strong>{activeEvent.candidates.length} 件</strong>
             </button>
-            <div className="summary-item">
-              <Users size={20} />
-              <span>関係者</span>
-              <strong>{activeMembers.length} 社</strong>
-            </div>
             <div className="summary-item">
               <Clock size={20} />
               <span>回答期限</span>
