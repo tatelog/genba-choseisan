@@ -98,6 +98,7 @@ type PlacementSchedule = {
   rowId: string;
   date: string;
   status: PlacementScheduleStatus;
+  startTime?: string;
   confirmedAt?: string;
   updatedAt: string;
   canceledAt?: string;
@@ -113,6 +114,11 @@ type ConfirmedMovePrompt = {
 type DraftMovePrompt = {
   rowId: string;
   date: string;
+};
+
+type ConfirmStartTimePrompt = {
+  rowId: string;
+  startTime: string;
 };
 
 type AdjustmentResponseRow = {
@@ -548,6 +554,7 @@ function MainApp({ onLogout }: MainAppProps) {
   const [mixMaster, setMixMaster] = useState(initialMixMaster);
   const [confirmedMovePrompt, setConfirmedMovePrompt] = useState<ConfirmedMovePrompt | null>(null);
   const [draftMovePrompt, setDraftMovePrompt] = useState<DraftMovePrompt | null>(null);
+  const [confirmStartTimePrompt, setConfirmStartTimePrompt] = useState<ConfirmStartTimePrompt | null>(null);
   const [editingPlacementRows, setEditingPlacementRows] = useState<Record<string, boolean>>({});
   const [isCandidatePlacementListOpen, setIsCandidatePlacementListOpen] = useState(false);
   const [lastMemberTap, setLastMemberTap] = useState<{ id: string; at: number } | null>(null);
@@ -592,7 +599,7 @@ function MainApp({ onLogout }: MainAppProps) {
         const activeSchedule = getActiveSchedule(placementSchedules, row.id);
         const scheduleLabel =
           activeSchedule?.status === "confirmed"
-            ? `${formatDateKeyShort(activeSchedule.date)} ${scheduleStatusLabels[activeSchedule.status]}`
+            ? `${formatDateKeyShort(activeSchedule.date)} ${activeSchedule.startTime ?? ""} ${scheduleStatusLabels[activeSchedule.status]}`.replace(/\s+/g, " ").trim()
             : preferredCandidate
               ? `${preferredCandidate.candidate.label.replace(/\s.+$/, "")} 未確定`
               : "未確定";
@@ -622,6 +629,10 @@ function MainApp({ onLogout }: MainAppProps) {
     [activeEvent, placementRows, placementSchedules, calendarMonthOffset, workCalendarSettings, weatherForecasts]
   );
   const unassignedPlacementRows = placementRows.filter((row) => !getActiveSchedule(placementSchedules, row.id));
+  const confirmStartRow = confirmStartTimePrompt
+    ? placementRows.find((row) => row.id === confirmStartTimePrompt.rowId)
+    : undefined;
+  const confirmStartSchedule = confirmStartTimePrompt ? placementSchedules[confirmStartTimePrompt.rowId] : undefined;
 
   useEffect(() => {
     const latitude = Number(siteSettings.latitude);
@@ -725,23 +736,37 @@ function MainApp({ onLogout }: MainAppProps) {
   }
 
   function confirmPlacementSchedule(rowId: string) {
+    const schedule = placementSchedules[rowId];
+    if (!schedule || schedule.status === "canceled") return;
+    setConfirmStartTimePrompt({
+      rowId,
+      startTime: schedule.startTime || getDefaultPlacementStartTime(schedule.date, activeEvent),
+    });
+  }
+
+  function finalizePlacementConfirmation() {
+    if (!confirmStartTimePrompt) return;
+    const startTime = confirmStartTimePrompt.startTime.trim();
+    if (!startTime) return;
     const now = getNowLabel();
     setPlacementSchedulesByEvent((current) => {
-      const schedule = current[activeEvent.id]?.[rowId];
+      const schedule = current[activeEvent.id]?.[confirmStartTimePrompt.rowId];
       if (!schedule || schedule.status === "canceled") return current;
       return {
         ...current,
         [activeEvent.id]: {
           ...(current[activeEvent.id] ?? {}),
-          [rowId]: {
+          [confirmStartTimePrompt.rowId]: {
             ...schedule,
             status: "confirmed",
+            startTime,
             confirmedAt: schedule.confirmedAt ?? now,
             updatedAt: now,
           },
         },
       };
     });
+    setConfirmStartTimePrompt(null);
   }
 
   function confirmDraftMoveSchedule() {
@@ -1313,6 +1338,7 @@ function MainApp({ onLogout }: MainAppProps) {
         )}
 
         {activeWorkMenu === "quantity" && isConcreteEvent && (
+          <>
           <section className="panel details-panel">
             <div className="panel-heading">
               <div>
@@ -1390,7 +1416,7 @@ function MainApp({ onLogout }: MainAppProps) {
                     const activeSchedule = getActiveSchedule(placementSchedules, row.id);
                     const scheduleLabel =
                       activeSchedule?.status === "confirmed"
-                        ? `${formatDateKeyShort(activeSchedule.date)} ${scheduleStatusLabels[activeSchedule.status]}`
+                        ? `${formatDateKeyShort(activeSchedule.date)} ${activeSchedule.startTime ?? ""} ${scheduleStatusLabels[activeSchedule.status]}`.replace(/\s+/g, " ").trim()
                         : preferredCandidate
                           ? `${preferredCandidate.candidate.label.replace(/\s.+$/, "")} 未確定`
                           : "未確定";
@@ -1418,6 +1444,7 @@ function MainApp({ onLogout }: MainAppProps) {
                           <div><dt>台数</dt><dd>{row.mixersPerHour || "-"} 台/h</dd></div>
                           <div><dt>配管</dt><dd>{row.hasPipe ? `${row.pipeLength || "-"} m` : "なし"}</dd></div>
                           <div><dt>2台付け</dt><dd>{row.doubleTruck}</dd></div>
+                          <div><dt>開始時刻</dt><dd>{activeSchedule?.startTime || "未確定"}</dd></div>
                         </dl>
                         <div className="placement-tile-actions">
                           <button className="row-dummy-button" type="button">
@@ -1729,6 +1756,9 @@ function MainApp({ onLogout }: MainAppProps) {
                                 <small>
                                   {row.concreteVolume || "-"}m3 / {row.floorArea || "-"}m2
                                 </small>
+                                {schedule.status === "confirmed" && schedule.startTime && (
+                                  <em>{schedule.startTime} 開始</em>
+                                )}
                                 <div className="month-event-actions">
                                   {schedule.status === "draft" && (
                                     <button onClick={() => confirmPlacementSchedule(row.id)} type="button">
@@ -1777,6 +1807,51 @@ function MainApp({ onLogout }: MainAppProps) {
                   </div>
                 </div>
               )}
+              {confirmStartTimePrompt && confirmStartRow && confirmStartSchedule && (
+                <div className="modal-backdrop" role="presentation">
+                  <div className="confirm-modal" role="dialog" aria-modal="true" aria-labelledby="confirm-start-time-title">
+                    <p className="eyebrow">確定処理</p>
+                    <h2 id="confirm-start-time-title">打設開始時間を入力</h2>
+                    <p>発注内容として保存するため、打設開始時間を入力してから確定します。</p>
+                    <dl>
+                      <div>
+                        <dt>打設箇所</dt>
+                        <dd>{formatPlacementLocation(confirmStartRow)}</dd>
+                      </div>
+                      <div>
+                        <dt>日程</dt>
+                        <dd>{formatDateKeyShort(confirmStartSchedule.date)}</dd>
+                      </div>
+                    </dl>
+                    <label className="confirm-time-field">
+                      開始時間
+                      <input
+                        autoFocus
+                        onChange={(event) =>
+                          setConfirmStartTimePrompt((current) =>
+                            current ? { ...current, startTime: event.target.value } : current
+                          )
+                        }
+                        type="time"
+                        value={confirmStartTimePrompt.startTime}
+                      />
+                    </label>
+                    <div className="modal-actions">
+                      <button className="secondary-button" onClick={() => setConfirmStartTimePrompt(null)} type="button">
+                        戻る
+                      </button>
+                      <button
+                        className="primary-button danger-button"
+                        disabled={!confirmStartTimePrompt.startTime.trim()}
+                        onClick={finalizePlacementConfirmation}
+                        type="button"
+                      >
+                        確定する
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
               {draftMovePrompt && (
                 <div className="modal-backdrop" role="presentation">
                   <div className="confirm-modal" role="dialog" aria-modal="true" aria-labelledby="draft-move-title">
@@ -1803,6 +1878,52 @@ function MainApp({ onLogout }: MainAppProps) {
               </>
             )}
           </section>
+          {detailView === "table" && confirmStartTimePrompt && confirmStartRow && confirmStartSchedule && (
+            <div className="modal-backdrop" role="presentation">
+              <div className="confirm-modal" role="dialog" aria-modal="true" aria-labelledby="confirm-start-time-table-title">
+                <p className="eyebrow">確定処理</p>
+                <h2 id="confirm-start-time-table-title">打設開始時間を入力</h2>
+                <p>発注内容として保存するため、打設開始時間を入力してから確定します。</p>
+                <dl>
+                  <div>
+                    <dt>打設箇所</dt>
+                    <dd>{formatPlacementLocation(confirmStartRow)}</dd>
+                  </div>
+                  <div>
+                    <dt>日程</dt>
+                    <dd>{formatDateKeyShort(confirmStartSchedule.date)}</dd>
+                  </div>
+                </dl>
+                <label className="confirm-time-field">
+                  開始時間
+                  <input
+                    autoFocus
+                    onChange={(event) =>
+                      setConfirmStartTimePrompt((current) =>
+                        current ? { ...current, startTime: event.target.value } : current
+                      )
+                    }
+                    type="time"
+                    value={confirmStartTimePrompt.startTime}
+                  />
+                </label>
+                <div className="modal-actions">
+                  <button className="secondary-button" onClick={() => setConfirmStartTimePrompt(null)} type="button">
+                    戻る
+                  </button>
+                  <button
+                    className="primary-button danger-button"
+                    disabled={!confirmStartTimePrompt.startTime.trim()}
+                    onClick={finalizePlacementConfirmation}
+                    type="button"
+                  >
+                    確定する
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+          </>
         )}
 
         {activeWorkMenu === "adjustment" && (
@@ -2061,6 +2182,14 @@ function formatDateKeyShort(dateKey: string) {
   const date = parseDateKey(dateKey);
   if (!date) return dateKey;
   return `${date.getMonth() + 1}/${date.getDate()}`;
+}
+
+function getDefaultPlacementStartTime(dateKey: string, event: EventItem) {
+  const shortDate = formatDateKeyShort(dateKey);
+  const candidate = event.candidates.find((item) => item.label.startsWith(shortDate));
+  const start = candidate?.time.match(/^(\d{1,2}):(\d{2})/)?.slice(1, 3);
+  if (!start) return "08:00";
+  return `${start[0].padStart(2, "0")}:${start[1]}`;
 }
 
 function getAreaZoneOptions(
