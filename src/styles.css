@@ -1863,6 +1863,7 @@ button:disabled {
   min-width: 0;
   overflow-x: auto;
   overscroll-behavior-x: contain;
+  position: relative;
 }
 
 .matrix-row {
@@ -1881,6 +1882,21 @@ button:disabled {
   color: #576861;
   font-size: 13px;
   font-weight: 700;
+}
+
+.matrix-row > :first-child {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+}
+
+.matrix-head > :first-child {
+  z-index: 4;
+  background: #f7f9f8;
+}
+
+.score-row > :first-child {
+  background: #f9fbfa;
 }
 
 .matrix-head > div,
