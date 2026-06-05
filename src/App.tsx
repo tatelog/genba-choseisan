@@ -1102,6 +1102,10 @@ function MainApp({ onLogout }: MainAppProps) {
             <h1>{pageTitle}</h1>
           </div>
           <div className="topbar-actions">
+            <div className="login-member-chip" title={`${selectedMemberInfo.company} / ${selectedMemberInfo.role}`}>
+              <span>ログイン業者</span>
+              <strong>{selectedMemberInfo.company}</strong>
+            </div>
             <button className="icon-button" title="通知">
               <Bell size={18} />
             </button>
