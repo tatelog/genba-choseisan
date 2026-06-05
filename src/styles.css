@@ -529,6 +529,10 @@ button:disabled {
   align-items: start;
 }
 
+.schedule-panel {
+  min-width: 0;
+}
+
 .panel {
   border: 1px solid #dce4df;
   border-radius: 8px;
@@ -1868,11 +1872,15 @@ button:disabled {
 }
 
 .matrix {
+  width: 100%;
+  min-width: 0;
   overflow-x: auto;
+  overscroll-behavior-x: contain;
 }
 
 .matrix-row {
   display: grid;
+  width: max-content;
   min-width: 100%;
   border-bottom: 1px solid #ecf0ee;
 }
