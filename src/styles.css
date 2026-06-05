@@ -461,7 +461,6 @@ button:disabled {
 .candidate-placement-card {
   position: relative;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
   gap: 5px;
   align-items: center;
   padding: 8px 9px;

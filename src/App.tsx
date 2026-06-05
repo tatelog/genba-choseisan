@@ -1141,24 +1141,6 @@ function MainApp({ onLogout }: MainAppProps) {
                     <div><dt>配管</dt><dd>{row.hasPipe ? `${row.pipeLength || "-"} m` : "なし"}</dd></div>
                     <div><dt>2台付け</dt><dd>{row.doubleTruck}</dd></div>
                   </dl>
-                  <div className="placement-tile-actions">
-                    <button className="row-dummy-button" type="button">
-                      ダミー
-                    </button>
-                    {activeSchedule?.status === "draft" && (
-                      <button className="row-confirm-button" onClick={() => confirmPlacementSchedule(row.id)} type="button">
-                        確定
-                      </button>
-                    )}
-                    {activeSchedule?.status === "confirmed" && (
-                      <button className="row-reschedule-button" onClick={() => setDetailView("calendar")} type="button">
-                        リスケ
-                      </button>
-                    )}
-                    <button className="row-edit-button" onClick={() => togglePlacementRowEdit(row.id)} type="button">
-                      編集
-                    </button>
-                  </div>
                 </article>
               ))}
             </div>
