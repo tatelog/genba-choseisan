@@ -440,42 +440,6 @@ button:disabled {
   color: #33433d;
 }
 
-.summary-grid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 12px;
-}
-
-.summary-item {
-  display: grid;
-  grid-template-columns: 28px 1fr;
-  gap: 2px 10px;
-  min-height: 84px;
-  padding: 16px;
-  border: 1px solid #dce4df;
-  border-radius: 8px;
-  background: #fff;
-}
-
-.summary-item svg {
-  grid-row: 1 / span 2;
-  color: #2f7d68;
-}
-
-.summary-item span {
-  color: #687971;
-  font-size: 12px;
-}
-
-.summary-item strong {
-  overflow-wrap: anywhere;
-}
-
-.summary-item.accent {
-  background: #edf7f2;
-  border-color: #b9d7ca;
-}
-
 .candidate-placement-panel {
   overflow: hidden;
 }
@@ -485,6 +449,13 @@ button:disabled {
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   gap: 8px;
   padding: 10px;
+}
+
+.candidate-placement-list > p {
+  margin: 0;
+  color: #687971;
+  font-size: 13px;
+  font-weight: 700;
 }
 
 .candidate-placement-card {
@@ -2325,10 +2296,6 @@ button:disabled {
   .secondary-button,
   .icon-button {
     min-height: 40px;
-  }
-
-  .summary-grid {
-    grid-template-columns: 1fr;
   }
 
   .topbar h1 {

@@ -1,7 +1,6 @@
 import {
   Bell,
   CalendarDays,
-  Check,
   ChevronLeft,
   ChevronRight,
   Lock,
@@ -556,8 +555,6 @@ function MainApp({ onLogout }: MainAppProps) {
   const [draftMovePrompt, setDraftMovePrompt] = useState<DraftMovePrompt | null>(null);
   const [confirmStartTimePrompt, setConfirmStartTimePrompt] = useState<ConfirmStartTimePrompt | null>(null);
   const [editingPlacementRows, setEditingPlacementRows] = useState<Record<string, boolean>>({});
-  const [isCandidatePlacementListOpen, setIsCandidatePlacementListOpen] = useState(false);
-  const [lastMemberTap, setLastMemberTap] = useState<{ id: string; at: number } | null>(null);
 
   const activeEvent = events.find((event) => event.id === activeId) ?? events[0];
   const activeMembers = membersByEvent[activeEvent.id] ?? activeEvent.members;
@@ -595,21 +592,15 @@ function MainApp({ onLogout }: MainAppProps) {
   const preferredCandidate = rankedCandidates[0];
   const candidatePlacementList = useMemo(
     () =>
-      placementRows.map((row) => {
+      placementRows.flatMap((row) => {
         const activeSchedule = getActiveSchedule(placementSchedules, row.id);
+        if (activeSchedule?.status === "confirmed") return [];
         const scheduleLabel =
-          activeSchedule?.status === "confirmed"
-            ? `${formatDateKeyShort(activeSchedule.date)} ${activeSchedule.startTime ?? ""} ${scheduleStatusLabels[activeSchedule.status]}`.replace(/\s+/g, " ").trim()
-            : preferredCandidate
-              ? `${preferredCandidate.candidate.label.replace(/\s.+$/, "")} 未確定`
-              : "未確定";
-        const scheduleTone =
-          activeSchedule?.status === "confirmed"
-            ? "confirmed"
-            : preferredCandidate
-              ? getCandidateTone(preferredCandidate.score)
-              : "waiting";
-        return { row, activeSchedule, scheduleLabel, scheduleTone };
+          preferredCandidate
+            ? `${preferredCandidate.candidate.label.replace(/\s.+$/, "")} 未確定`
+            : "未確定";
+        const scheduleTone = preferredCandidate ? getCandidateTone(preferredCandidate.score) : "waiting";
+        return [{ row, activeSchedule, scheduleLabel, scheduleTone }];
       }),
     [placementRows, placementSchedules, preferredCandidate]
   );
@@ -678,18 +669,6 @@ function MainApp({ onLogout }: MainAppProps) {
     setDraftResponses(next.responses);
     setActiveWorkMenu("quantity");
     setCalendarMonthOffset(0);
-    setIsCandidatePlacementListOpen(false);
-  }
-
-  function handleMemberTap(memberId: string) {
-    const now = Date.now();
-    setSelectedMember(memberId);
-    if (lastMemberTap?.id === memberId && now - lastMemberTap.at < 420) {
-      setIsCandidatePlacementListOpen(true);
-      setLastMemberTap(null);
-      return;
-    }
-    setLastMemberTap({ id: memberId, at: now });
   }
 
   function toggleSaturdayClosedWeek(week: number) {
@@ -1082,54 +1061,41 @@ function MainApp({ onLogout }: MainAppProps) {
 
         {activeWorkMenu === "adjustment" && (
           <>
-          <section className="summary-grid">
-            <div className="summary-item">
-              <CalendarDays size={20} />
-              <span>候補日</span>
-              <strong>{activeEvent.candidates.length} 件</strong>
+          <section className="panel candidate-placement-panel" aria-label="未確定の打設計画">
+            <div className="panel-heading compact">
+              <div>
+                <p className="eyebrow">候補日</p>
+                <h2>未確定の打設計画</h2>
+              </div>
+              <span className="status-pill">{candidatePlacementList.length} 件</span>
             </div>
-            <div className="summary-item accent">
-              <Check size={20} />
-              <span>最有力</span>
-              <strong>{rankedCandidates[0]?.candidate.label}</strong>
+            <div className="candidate-placement-list">
+              {candidatePlacementList.length === 0 && <p>未確定の打設計画はありません。</p>}
+              {candidatePlacementList.map(({ row, activeSchedule, scheduleLabel, scheduleTone }) => (
+                <article className="candidate-placement-card" key={row.id}>
+                  <div>
+                    <strong>
+                      <em className={`placement-schedule-badge ${scheduleTone}`}>{scheduleLabel}</em>
+                      {formatPlacementLocation(row)}
+                    </strong>
+                    <span>
+                      {row.concreteVolume || "-"}m3 / {row.floorArea || "-"}m2
+                    </span>
+                  </div>
+                  <dl>
+                    <div>
+                      <dt>配合</dt>
+                      <dd>{row.mix || "未設定"}</dd>
+                    </div>
+                    <div>
+                      <dt>状態</dt>
+                      <dd>{activeSchedule ? scheduleStatusLabels[activeSchedule.status] : "未設定"}</dd>
+                    </div>
+                  </dl>
+                </article>
+              ))}
             </div>
           </section>
-          {isCandidatePlacementListOpen && (
-            <section className="panel candidate-placement-panel" aria-label="候補日に紐づく打設箇所">
-              <div className="panel-heading compact">
-                <div>
-                  <p className="eyebrow">関係者確認</p>
-                  <h2>打設箇所リスト</h2>
-                </div>
-                <span className="status-pill">{candidatePlacementList.length} 箇所</span>
-              </div>
-              <div className="candidate-placement-list">
-                {candidatePlacementList.map(({ row, activeSchedule, scheduleLabel, scheduleTone }) => (
-                  <article className="candidate-placement-card" key={row.id}>
-                    <div>
-                      <strong>
-                        <em className={`placement-schedule-badge ${scheduleTone}`}>{scheduleLabel}</em>
-                        {formatPlacementLocation(row)}
-                      </strong>
-                      <span>
-                        {row.concreteVolume || "-"}m3 / {row.floorArea || "-"}m2
-                      </span>
-                    </div>
-                    <dl>
-                      <div>
-                        <dt>配合</dt>
-                        <dd>{row.mix || "未設定"}</dd>
-                      </div>
-                      <div>
-                        <dt>状態</dt>
-                        <dd>{activeSchedule ? scheduleStatusLabels[activeSchedule.status] : "未設定"}</dd>
-                      </div>
-                    </dl>
-                  </article>
-                ))}
-              </div>
-            </section>
-          )}
           </>
         )}
 
@@ -1953,8 +1919,7 @@ function MainApp({ onLogout }: MainAppProps) {
                 <div className="matrix-row" role="row" key={member.id} style={matrixColumns(activeEvent)}>
                   <button
                     className={`member-cell ${member.id === selectedMember ? "selected" : ""}`}
-                    onClick={() => handleMemberTap(member.id)}
-                    onDoubleClick={() => setIsCandidatePlacementListOpen(true)}
+                    onClick={() => setSelectedMember(member.id)}
                   >
                     <strong>{member.company}</strong>
                     <span>{member.role}</span>
