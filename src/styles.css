@@ -446,7 +446,7 @@ button:disabled {
 
 .candidate-placement-list {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 8px;
   padding: 10px;
 }
@@ -461,7 +461,9 @@ button:disabled {
 .candidate-placement-card {
   position: relative;
   display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   gap: 5px;
+  align-items: center;
   padding: 8px 9px;
   border: 1px dashed #b9d1c9;
   border-radius: 8px;
@@ -508,6 +510,16 @@ button:disabled {
   color: #22332e;
   font-weight: 700;
   text-align: right;
+}
+
+.candidate-placement-card .placement-tile-popover div {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr);
+  justify-content: initial;
+}
+
+.candidate-placement-card .placement-tile-popover dd {
+  text-align: left;
 }
 
 .content-grid {

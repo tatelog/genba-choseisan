@@ -1068,15 +1068,15 @@ function MainApp({ onLogout }: MainAppProps) {
           <section className="panel candidate-placement-panel" aria-label="未確定の打設計画">
             <div className="panel-heading compact">
               <div>
-                <p className="eyebrow">候補日</p>
-                <h2>未確定の打設計画</h2>
+                <p className="eyebrow">調整対象</p>
+                <h2>打設予定リスト</h2>
               </div>
               <span className="status-pill">{candidatePlacementList.length} 件</span>
             </div>
             <div className="candidate-placement-list">
-              {candidatePlacementList.length === 0 && <p>未確定の打設計画はありません。</p>}
+              {candidatePlacementList.length === 0 && <p>未確定の打設予定はありません。</p>}
               {candidatePlacementList.map(({ row, activeSchedule, scheduleLabel, scheduleTone }) => (
-                <article className="candidate-placement-card" key={row.id}>
+                <article className="candidate-placement-card placement-plan-tile" key={row.id}>
                   <div>
                     <strong>
                       <em className={`placement-schedule-badge ${scheduleTone}`}>{scheduleLabel}</em>
@@ -1086,16 +1086,32 @@ function MainApp({ onLogout }: MainAppProps) {
                       {row.concreteVolume || "-"}m3 / {row.floorArea || "-"}m2
                     </span>
                   </div>
-                  <dl>
-                    <div>
-                      <dt>配合</dt>
-                      <dd>{row.mix || "未設定"}</dd>
-                    </div>
-                    <div>
-                      <dt>状態</dt>
-                      <dd>{activeSchedule ? scheduleStatusLabels[activeSchedule.status] : "未設定"}</dd>
-                    </div>
+                  <dl className="placement-tile-popover">
+                    <div><dt>状態</dt><dd>{activeSchedule ? scheduleStatusLabels[activeSchedule.status] : "未設定"}</dd></div>
+                    <div><dt>配合</dt><dd>{row.mix || "未設定"}</dd></div>
+                    <div><dt>床仕上げ</dt><dd>{row.floorFinish || "未設定"}</dd></div>
+                    <div><dt>台数</dt><dd>{row.mixersPerHour || "-"} 台/h</dd></div>
+                    <div><dt>配管</dt><dd>{row.hasPipe ? `${row.pipeLength || "-"} m` : "なし"}</dd></div>
+                    <div><dt>2台付け</dt><dd>{row.doubleTruck}</dd></div>
                   </dl>
+                  <div className="placement-tile-actions">
+                    <button className="row-dummy-button" type="button">
+                      ダミー
+                    </button>
+                    {activeSchedule?.status === "draft" && (
+                      <button className="row-confirm-button" onClick={() => confirmPlacementSchedule(row.id)} type="button">
+                        確定
+                      </button>
+                    )}
+                    {activeSchedule?.status === "confirmed" && (
+                      <button className="row-reschedule-button" onClick={() => setDetailView("calendar")} type="button">
+                        リスケ
+                      </button>
+                    )}
+                    <button className="row-edit-button" onClick={() => togglePlacementRowEdit(row.id)} type="button">
+                      編集
+                    </button>
+                  </div>
                 </article>
               ))}
             </div>
