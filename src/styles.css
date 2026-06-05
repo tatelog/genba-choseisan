@@ -2441,9 +2441,9 @@ button:disabled {
   }
 
   .placement-row-summary {
-    display: flex;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
     align-items: center;
-    justify-content: space-between;
     gap: 10px;
     min-height: 58px;
     margin: 8px;
@@ -2503,9 +2503,10 @@ button:disabled {
   .placement-tile-actions {
     gap: 5px;
     flex-direction: row;
-    flex-wrap: nowrap;
+    flex-wrap: wrap;
     justify-content: flex-end;
-    width: 100%;
+    width: auto;
+    max-width: 124px;
   }
 
   .row-confirm-button,
