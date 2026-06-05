@@ -555,6 +555,7 @@ function MainApp({ onLogout }: MainAppProps) {
   const [confirmStartTimePrompt, setConfirmStartTimePrompt] = useState<ConfirmStartTimePrompt | null>(null);
   const [editingPlacementRows, setEditingPlacementRows] = useState<Record<string, boolean>>({});
   const [invalidPlacementRows, setInvalidPlacementRows] = useState<Record<string, boolean>>({});
+  const [placementZoneSort, setPlacementZoneSort] = useState<"asc" | "desc">("asc");
 
   const activeEvent = events.find((event) => event.id === activeId) ?? events[0];
   const activeMembers = membersByEvent[activeEvent.id] ?? activeEvent.members;
@@ -569,6 +570,21 @@ function MainApp({ onLogout }: MainAppProps) {
   const areaZoneOptions = getAreaZoneOptions(visibleStakeholderMaster, zoneAssignments, assignmentRoles);
   const activeWorkMenuLabel = workMenus.find((menu) => menu.id === activeWorkMenu)?.label ?? "";
   const pageTitle = activeWorkMenuLabel;
+  const selectedMemberInfo =
+    activeMembers.find((member) => member.id === selectedMember) ?? activeMembers[0];
+  const assignedPlacementZones = useMemo(
+    () => getAssignedPlacementZones(selectedMemberInfo, visibleStakeholderMaster, zoneAssignments),
+    [selectedMemberInfo, visibleStakeholderMaster, zoneAssignments]
+  );
+  const visiblePlacementRows = useMemo(
+    () =>
+      placementRows
+        .filter((row) => assignedPlacementZones === null || assignedPlacementZones.has(row.zone))
+        .sort((a, b) =>
+          placementZoneSort === "asc" ? compareZoneLabel(a.zone, b.zone) : compareZoneLabel(b.zone, a.zone)
+        ),
+    [placementRows, assignedPlacementZones, placementZoneSort]
+  );
   const hasInvalidPlacementRows = placementRows.some(
     (row) => invalidPlacementRows[row.id] && isPlacementPlanIncomplete(row, getActiveSchedule(placementSchedules, row.id))
   );
@@ -581,8 +597,8 @@ function MainApp({ onLogout }: MainAppProps) {
     }, 0),
   };
   const adjustmentCandidates = useMemo(
-    () => buildAdjustmentCandidates(activeEvent, placementRows, placementSchedules),
-    [activeEvent, placementRows, placementSchedules]
+    () => buildAdjustmentCandidates(activeEvent, visiblePlacementRows, placementSchedules),
+    [activeEvent, visiblePlacementRows, placementSchedules]
   );
   const responseEvent = useMemo(
     () => ({ ...activeEvent, members: activeMembers, candidates: adjustmentCandidates, responses: draftResponses }),
@@ -602,7 +618,7 @@ function MainApp({ onLogout }: MainAppProps) {
   const preferredCandidate = rankedCandidates[0];
   const candidatePlacementList = useMemo(
     () =>
-      placementRows.flatMap((row) => {
+      visiblePlacementRows.flatMap((row) => {
         const activeSchedule = getActiveSchedule(placementSchedules, row.id);
         if (activeSchedule?.status === "confirmed") return [];
         const scheduleLabel =
@@ -612,24 +628,22 @@ function MainApp({ onLogout }: MainAppProps) {
         const scheduleTone = preferredCandidate ? getCandidateTone(preferredCandidate.score) : "waiting";
         return [{ row, activeSchedule, scheduleLabel, scheduleTone }];
       }),
-    [placementRows, placementSchedules, preferredCandidate]
+    [visiblePlacementRows, placementSchedules, preferredCandidate]
   );
 
-  const selectedMemberInfo =
-    activeMembers.find((member) => member.id === selectedMember) ?? activeMembers[0];
   const placementMonths = useMemo(
     () =>
       buildPlacementMonths(
         activeEvent,
-        placementRows,
+        visiblePlacementRows,
         placementSchedules,
         calendarMonthOffset,
         workCalendarSettings,
         weatherForecasts
       ),
-    [activeEvent, placementRows, placementSchedules, calendarMonthOffset, workCalendarSettings, weatherForecasts]
+    [activeEvent, visiblePlacementRows, placementSchedules, calendarMonthOffset, workCalendarSettings, weatherForecasts]
   );
-  const unassignedPlacementRows = placementRows.filter((row) => !getActiveSchedule(placementSchedules, row.id));
+  const unassignedPlacementRows = visiblePlacementRows.filter((row) => !getActiveSchedule(placementSchedules, row.id));
   const confirmStartRow = confirmStartTimePrompt
     ? placementRows.find((row) => row.id === confirmStartTimePrompt.rowId)
     : undefined;
@@ -1127,7 +1141,16 @@ function MainApp({ onLogout }: MainAppProps) {
                 <p className="eyebrow">調整対象</p>
                 <h2>打設予定リスト</h2>
               </div>
-              <span className="status-pill">{candidatePlacementList.length} 件</span>
+              <div className="candidate-placement-tools">
+                <button
+                  className="sort-toggle-button"
+                  onClick={() => setPlacementZoneSort((current) => (current === "asc" ? "desc" : "asc"))}
+                  type="button"
+                >
+                  工区 {placementZoneSort === "asc" ? "昇順" : "降順"}
+                </button>
+                <span className="status-pill">{candidatePlacementList.length} 件</span>
+              </div>
             </div>
             <div className="candidate-placement-list">
               {candidatePlacementList.length === 0 && <p>未確定の打設予定はありません。</p>}
@@ -1433,7 +1456,7 @@ function MainApp({ onLogout }: MainAppProps) {
                     <div>2台付け</div>
                     <div>操作</div>
                   </div>
-                  {placementRows.map((row) => {
+                  {visiblePlacementRows.map((row) => {
                     const isRowEditing = Boolean(editingPlacementRows[row.id]);
                     const showRowErrors = Boolean(invalidPlacementRows[row.id]);
                     const activeSchedule = getActiveSchedule(placementSchedules, row.id);
@@ -2291,6 +2314,34 @@ function getAreaZoneOptions(
     }
   }
   return Array.from(pairs.values());
+}
+
+function getAssignedPlacementZones(
+  member: Member | undefined,
+  members: StakeholderMaster[],
+  assignments: ZoneAssignment[]
+) {
+  if (!member) return null;
+  const assignedZones = new Set<string>();
+  const masterMember = members.find((item) => item.id === member.id);
+  if (masterMember && isAllZone(masterMember.area, masterMember.zone)) return null;
+  if (masterMember?.zone) assignedZones.add(masterMember.zone);
+
+  for (const assignment of assignments) {
+    if (assignment.memberId !== member.id) continue;
+    if (isAllZone(assignment.area, assignment.zone)) return null;
+    assignedZones.add(assignment.zone);
+  }
+
+  return assignedZones.size > 0 ? assignedZones : null;
+}
+
+function isAllZone(area: string, zone: string) {
+  return ["共通", "全体"].includes(area) || ["共通", "全体"].includes(zone);
+}
+
+function compareZoneLabel(a: string, b: string) {
+  return a.localeCompare(b, "ja", { numeric: true, sensitivity: "base" });
 }
 
 function getSaturdayWeekOfMonth(date: Date) {
