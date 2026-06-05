@@ -581,16 +581,24 @@ function MainApp({ onLogout }: MainAppProps) {
       return sum + requiredValues.filter((value) => !String(value).trim()).length;
     }, 0),
   };
+  const adjustmentCandidates = useMemo(
+    () => buildAdjustmentCandidates(activeEvent, placementRows, placementSchedules),
+    [activeEvent, placementRows, placementSchedules]
+  );
+  const responseEvent = useMemo(
+    () => ({ ...activeEvent, members: activeMembers, candidates: adjustmentCandidates, responses: draftResponses }),
+    [activeEvent, activeMembers, adjustmentCandidates, draftResponses]
+  );
 
   const rankedCandidates = useMemo(() => {
-    const eventForScoring = { ...activeEvent, members: activeMembers, responses: draftResponses };
-    return activeEvent.candidates
+    const eventForScoring = { ...activeEvent, members: activeMembers, candidates: adjustmentCandidates, responses: draftResponses };
+    return adjustmentCandidates
       .map((candidate) => ({ candidate, score: scoreCandidate(eventForScoring, candidate.id) }))
       .sort((a, b) => b.score.ok - a.score.ok || a.score.ng - b.score.ng || a.score.none - b.score.none);
-  }, [activeEvent, activeMembers, draftResponses]);
+  }, [activeEvent, activeMembers, adjustmentCandidates, draftResponses]);
   const adjustmentResponseRows = useMemo(
-    () => buildAdjustmentResponseRows({ ...activeEvent, members: activeMembers, responses: draftResponses }),
-    [activeEvent, activeMembers, draftResponses]
+    () => buildAdjustmentResponseRows(responseEvent),
+    [responseEvent]
   );
   const preferredCandidate = rankedCandidates[0];
   const candidatePlacementList = useMemo(
@@ -822,8 +830,6 @@ function MainApp({ onLogout }: MainAppProps) {
     updateMemberMark(selectedMemberInfo.id, candidateId, mark);
   }
 
-  const responseEvent = { ...activeEvent, members: activeMembers, responses: draftResponses };
-
   function addMemberFromMaster(masterMember: StakeholderMaster) {
     const alreadyInEvent = activeMembers.some((member) => member.id === masterMember.id);
     if (alreadyInEvent) return;
@@ -841,7 +847,7 @@ function MainApp({ onLogout }: MainAppProps) {
     }));
     setDraftResponses((current) => ({
       ...current,
-      [nextMember.id]: Object.fromEntries(activeEvent.candidates.map((candidate) => [candidate.id, "none" as Mark])),
+      [nextMember.id]: Object.fromEntries(responseEvent.candidates.map((candidate) => [candidate.id, "none" as Mark])),
     }));
     setSelectedMember(nextMember.id);
   }
@@ -1955,9 +1961,9 @@ function MainApp({ onLogout }: MainAppProps) {
             </div>
 
             <div className="matrix" role="table" aria-label="候補日ごとの回答表">
-              <div className="matrix-row matrix-head" role="row" style={matrixColumns(activeEvent)}>
+              <div className="matrix-row matrix-head" role="row" style={matrixColumns(responseEvent)}>
                 <div role="columnheader">関係者</div>
-                {activeEvent.candidates.map((candidate) => (
+                {responseEvent.candidates.map((candidate) => (
                   <div role="columnheader" key={candidate.id}>
                     <strong>{candidate.label}</strong>
                     <span>{candidate.time}</span>
@@ -1966,7 +1972,7 @@ function MainApp({ onLogout }: MainAppProps) {
               </div>
 
               {activeMembers.map((member) => (
-                <div className="matrix-row" role="row" key={member.id} style={matrixColumns(activeEvent)}>
+                <div className="matrix-row" role="row" key={member.id} style={matrixColumns(responseEvent)}>
                   <button
                     className={`member-cell ${member.id === selectedMember ? "selected" : ""}`}
                     onClick={() => setSelectedMember(member.id)}
@@ -1974,7 +1980,7 @@ function MainApp({ onLogout }: MainAppProps) {
                     <strong>{member.company}</strong>
                     <span>{member.role}</span>
                   </button>
-                  {activeEvent.candidates.map((candidate) => {
+                  {responseEvent.candidates.map((candidate) => {
                     const mark = responseEvent.responses[member.id]?.[candidate.id] ?? "none";
                     return (
                       <div className="mark-cell" role="cell" key={candidate.id}>
@@ -1997,9 +2003,9 @@ function MainApp({ onLogout }: MainAppProps) {
                 </div>
               ))}
 
-              <div className="matrix-row score-row" role="row" style={matrixColumns(activeEvent)}>
+              <div className="matrix-row score-row" role="row" style={matrixColumns(responseEvent)}>
                 <div role="cell">集計</div>
-                {activeEvent.candidates.map((candidate) => {
+                {responseEvent.candidates.map((candidate) => {
                   const score = scoreCandidate(responseEvent, candidate.id);
                   return (
                     <div className={`score ${getCandidateTone(score)}`} role="cell" key={candidate.id}>
@@ -2071,7 +2077,7 @@ function MainApp({ onLogout }: MainAppProps) {
             </div>
 
             <div className="response-list">
-              {activeEvent.candidates.map((candidate) => {
+              {responseEvent.candidates.map((candidate) => {
                 const current = responseEvent.responses[selectedMemberInfo.id]?.[candidate.id] ?? "none";
                 return (
                   <div className="response-card" key={candidate.id}>
@@ -2232,6 +2238,41 @@ function getDefaultPlacementStartTime(dateKey: string, event: EventItem) {
   const start = candidate?.time.match(/^(\d{1,2}):(\d{2})/)?.slice(1, 3);
   if (!start) return "08:00";
   return `${start[0].padStart(2, "0")}:${start[1]}`;
+}
+
+function buildAdjustmentCandidates(
+  event: EventItem,
+  rows: ConcretePlacementRow[],
+  schedules: Record<string, PlacementSchedule>
+) {
+  const dateKeys = new Set<string>();
+  for (const row of rows) {
+    const schedule = getActiveSchedule(schedules, row.id);
+    if (!schedule?.date) continue;
+    const baseDate = parseDateKey(schedule.date);
+    if (!baseDate) continue;
+    for (let offset = -3; offset <= 3; offset += 1) {
+      const date = new Date(baseDate);
+      date.setDate(baseDate.getDate() + offset);
+      dateKeys.add(formatDateKey(date));
+    }
+  }
+
+  if (dateKeys.size === 0) return event.candidates;
+
+  return Array.from(dateKeys)
+    .sort()
+    .map((dateKey) => {
+      const date = parseDateKey(dateKey);
+      const label = date ? `${date.getMonth() + 1}/${date.getDate()} ${weekdays[date.getDay()]}` : dateKey;
+      const existingCandidate = event.candidates.find((candidate) => candidate.label.startsWith(formatDateKeyShort(dateKey)));
+      return {
+        id: `date-${dateKey}`,
+        label,
+        time: existingCandidate?.time ?? "8:00-12:00",
+        note: "希望日±3日",
+      };
+    });
 }
 
 function getAreaZoneOptions(
