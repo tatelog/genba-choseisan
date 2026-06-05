@@ -1787,6 +1787,15 @@ button:disabled {
   font-size: 13px;
 }
 
+.danger-button {
+  border: 1px solid #d75a4a;
+  background: #c63c30;
+}
+
+.danger-button:hover {
+  background: #ad2f25;
+}
+
 .matrix {
   overflow-x: auto;
 }

@@ -113,6 +113,11 @@ type ConfirmedMovePrompt = {
   currentDate: string;
 };
 
+type DraftMovePrompt = {
+  rowId: string;
+  date: string;
+};
+
 type AdjustmentResponseRow = {
   count: number;
   candidateId: string;
@@ -545,6 +550,7 @@ function MainApp({ onLogout }: MainAppProps) {
   const [weatherStatus, setWeatherStatus] = useState<"idle" | "loading" | "ready" | "error">("idle");
   const [mixMaster, setMixMaster] = useState(initialMixMaster);
   const [confirmedMovePrompt, setConfirmedMovePrompt] = useState<ConfirmedMovePrompt | null>(null);
+  const [draftMovePrompt, setDraftMovePrompt] = useState<DraftMovePrompt | null>(null);
   const [editingPlacementRows, setEditingPlacementRows] = useState<Record<string, boolean>>({});
 
   const activeEvent = events.find((event) => event.id === activeId) ?? events[0];
@@ -665,6 +671,9 @@ function MainApp({ onLogout }: MainAppProps) {
     }
 
     upsertPlacementSchedule(rowId, dateKey);
+    if (currentSchedule?.status === "draft" && currentSchedule.date !== dateKey) {
+      setDraftMovePrompt({ rowId, date: dateKey });
+    }
   }
 
   function upsertPlacementSchedule(rowId: string, dateKey: string) {
@@ -702,6 +711,12 @@ function MainApp({ onLogout }: MainAppProps) {
         },
       };
     });
+  }
+
+  function confirmDraftMoveSchedule() {
+    if (!draftMovePrompt) return;
+    confirmPlacementSchedule(draftMovePrompt.rowId);
+    setDraftMovePrompt(null);
   }
 
   function moveConfirmedPlacementWithCancel() {
@@ -1698,6 +1713,29 @@ function MainApp({ onLogout }: MainAppProps) {
                       </button>
                       <button className="primary-button" onClick={moveConfirmedPlacementWithCancel} type="button">
                         キャンセルして複製
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+              {draftMovePrompt && (
+                <div className="modal-backdrop" role="presentation">
+                  <div className="confirm-modal" role="dialog" aria-modal="true" aria-labelledby="draft-move-title">
+                    <p className="eyebrow">未確定日程の移動</p>
+                    <h2 id="draft-move-title">この日程で確定しますか？</h2>
+                    <p>未確定の打設予定を移動しました。移動先の日程で確定するか、未確定のまま調整を続けるか選択してください。</p>
+                    <dl>
+                      <div>
+                        <dt>移動先</dt>
+                        <dd>{draftMovePrompt.date}</dd>
+                      </div>
+                    </dl>
+                    <div className="modal-actions">
+                      <button className="secondary-button" onClick={() => setDraftMovePrompt(null)} type="button">
+                        未確定のまま
+                      </button>
+                      <button className="primary-button danger-button" onClick={confirmDraftMoveSchedule} type="button">
+                        確定する
                       </button>
                     </div>
                   </div>
