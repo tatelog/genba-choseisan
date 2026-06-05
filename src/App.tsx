@@ -552,6 +552,7 @@ function MainApp({ onLogout }: MainAppProps) {
   const [confirmedMovePrompt, setConfirmedMovePrompt] = useState<ConfirmedMovePrompt | null>(null);
   const [draftMovePrompt, setDraftMovePrompt] = useState<DraftMovePrompt | null>(null);
   const [editingPlacementRows, setEditingPlacementRows] = useState<Record<string, boolean>>({});
+  const [isCandidatePlacementListOpen, setIsCandidatePlacementListOpen] = useState(false);
 
   const activeEvent = events.find((event) => event.id === activeId) ?? events[0];
   const activeMembers = membersByEvent[activeEvent.id] ?? activeEvent.members;
@@ -587,6 +588,26 @@ function MainApp({ onLogout }: MainAppProps) {
     [activeEvent, activeMembers, draftResponses]
   );
   const preferredCandidate = rankedCandidates[0];
+  const candidatePlacementList = useMemo(
+    () =>
+      placementRows.map((row) => {
+        const activeSchedule = getActiveSchedule(placementSchedules, row.id);
+        const scheduleLabel =
+          activeSchedule?.status === "confirmed"
+            ? `${formatDateKeyShort(activeSchedule.date)} ${scheduleStatusLabels[activeSchedule.status]}`
+            : preferredCandidate
+              ? `${preferredCandidate.candidate.label.replace(/\s.+$/, "")} 未確定`
+              : "未確定";
+        const scheduleTone =
+          activeSchedule?.status === "confirmed"
+            ? "confirmed"
+            : preferredCandidate
+              ? getCandidateTone(preferredCandidate.score)
+              : "waiting";
+        return { row, activeSchedule, scheduleLabel, scheduleTone };
+      }),
+    [placementRows, placementSchedules, preferredCandidate]
+  );
 
   const selectedMemberInfo =
     activeMembers.find((member) => member.id === selectedMember) ?? activeMembers[0];
@@ -648,6 +669,7 @@ function MainApp({ onLogout }: MainAppProps) {
     setDraftResponses(next.responses);
     setActiveWorkMenu("quantity");
     setCalendarMonthOffset(0);
+    setIsCandidatePlacementListOpen(false);
   }
 
   function toggleSaturdayClosedWeek(week: number) {
@@ -1025,12 +1047,18 @@ function MainApp({ onLogout }: MainAppProps) {
         </header>
 
         {activeWorkMenu === "adjustment" && (
+          <>
           <section className="summary-grid">
-            <div className="summary-item">
+            <button
+              aria-expanded={isCandidatePlacementListOpen}
+              className="summary-item summary-button"
+              onClick={() => setIsCandidatePlacementListOpen((isOpen) => !isOpen)}
+              type="button"
+            >
               <CalendarDays size={20} />
               <span>候補日</span>
               <strong>{activeEvent.candidates.length} 件</strong>
-            </div>
+            </button>
             <div className="summary-item">
               <Users size={20} />
               <span>関係者</span>
@@ -1047,6 +1075,43 @@ function MainApp({ onLogout }: MainAppProps) {
               <strong>{rankedCandidates[0]?.candidate.label}</strong>
             </div>
           </section>
+          {isCandidatePlacementListOpen && (
+            <section className="panel candidate-placement-panel" aria-label="候補日に紐づく打設箇所">
+              <div className="panel-heading compact">
+                <div>
+                  <p className="eyebrow">候補日対象</p>
+                  <h2>打設箇所リスト</h2>
+                </div>
+                <span className="status-pill">{candidatePlacementList.length} 箇所</span>
+              </div>
+              <div className="candidate-placement-list">
+                {candidatePlacementList.map(({ row, activeSchedule, scheduleLabel, scheduleTone }) => (
+                  <article className="candidate-placement-card" key={row.id}>
+                    <div>
+                      <strong>
+                        <em className={`placement-schedule-badge ${scheduleTone}`}>{scheduleLabel}</em>
+                        {formatPlacementLocation(row)}
+                      </strong>
+                      <span>
+                        {row.concreteVolume || "-"}m3 / {row.floorArea || "-"}m2
+                      </span>
+                    </div>
+                    <dl>
+                      <div>
+                        <dt>配合</dt>
+                        <dd>{row.mix || "未設定"}</dd>
+                      </div>
+                      <div>
+                        <dt>状態</dt>
+                        <dd>{activeSchedule ? scheduleStatusLabels[activeSchedule.status] : "未設定"}</dd>
+                      </div>
+                    </dl>
+                  </article>
+                ))}
+              </div>
+            </section>
+          )}
+          </>
         )}
 
         {activeWorkMenu === "settings" && (

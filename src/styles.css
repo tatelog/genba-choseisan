@@ -456,6 +456,23 @@ button:disabled {
   background: #fff;
 }
 
+.summary-button {
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+}
+
+.summary-button:hover,
+.summary-button[aria-expanded="true"] {
+  border-color: #2f7d68;
+  background: #eef7f3;
+}
+
+.summary-button:focus-visible {
+  outline: 3px solid rgba(47, 125, 104, 0.25);
+  outline-offset: 2px;
+}
+
 .summary-item svg {
   grid-row: 1 / span 2;
   color: #2f7d68;
@@ -473,6 +490,68 @@ button:disabled {
 .summary-item.accent {
   background: #fff7e4;
   border-color: #f1d48d;
+}
+
+.candidate-placement-panel {
+  overflow: hidden;
+}
+
+.candidate-placement-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 10px;
+  padding: 14px;
+}
+
+.candidate-placement-card {
+  position: relative;
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border: 1px dashed #b9d1c9;
+  border-radius: 8px;
+  background: #f7fbf9;
+}
+
+.candidate-placement-card strong {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  color: #1d2d28;
+}
+
+.candidate-placement-card span {
+  display: block;
+  margin-top: 3px;
+  color: #4f685f;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.candidate-placement-card dl {
+  display: grid;
+  gap: 5px;
+  margin: 0;
+  color: #60766f;
+  font-size: 12px;
+}
+
+.candidate-placement-card dl div {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.candidate-placement-card dt,
+.candidate-placement-card dd {
+  margin: 0;
+}
+
+.candidate-placement-card dd {
+  color: #22332e;
+  font-weight: 700;
+  text-align: right;
 }
 
 .content-grid {
