@@ -4,7 +4,6 @@ import {
   Check,
   ChevronLeft,
   ChevronRight,
-  CircleAlert,
   Lock,
   LogIn,
   LogOut,
@@ -1937,27 +1936,6 @@ function MainApp({ onLogout }: MainAppProps) {
           </aside>
         </section>
 
-        <section className="decision-band">
-          <div className="decision-copy">
-            <CircleAlert size={20} />
-            <div>
-              <h2>確定支援</h2>
-              <p>
-                他社が対応可にしている候補を見ながら、△を○へ寄せられる余地を探します。
-                最終許容日やゲート干渉は確定前に確認します。
-              </p>
-            </div>
-          </div>
-          <div className="candidate-ranking">
-            {rankedCandidates.map(({ candidate, score }) => (
-              <button className={`ranking-item ${getCandidateTone(score)}`} key={candidate.id}>
-                <span>{candidate.label}</span>
-                <strong>○{score.ok} △{score.maybe} ×{score.ng}</strong>
-                {score.ng === 0 && score.none === 0 ? <Check size={17} /> : <X size={17} />}
-              </button>
-            ))}
-          </div>
-        </section>
         </>
         )}
       </main>
