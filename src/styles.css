@@ -2545,7 +2545,7 @@ button:disabled {
 
   .placement-row-summary {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-columns: minmax(0, 1fr);
     align-items: center;
     gap: 10px;
     min-height: 58px;
@@ -2611,17 +2611,17 @@ button:disabled {
   .placement-tile-actions {
     gap: 5px;
     flex-direction: row;
-    flex-wrap: wrap;
-    justify-content: flex-end;
-    width: auto;
-    max-width: 124px;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    width: 100%;
+    max-width: none;
   }
 
   .row-confirm-button,
   .row-reschedule-button,
   .row-dummy-button,
   .placement-tile-actions .row-edit-button {
-    flex: 0 0 auto;
+    flex: 1 1 0;
     min-height: 32px;
     padding: 0 9px;
     font-size: 12px;
