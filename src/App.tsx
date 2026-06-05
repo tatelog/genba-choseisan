@@ -1983,27 +1983,44 @@ function MainApp({ onLogout }: MainAppProps) {
             <div className="adjustment-response-db">
               <div>
                 <p className="eyebrow">調整さん回答DB</p>
-                <h3>候補日別の回答ログ</h3>
+                <h3>打設予定別の回答ログ</h3>
               </div>
-              <div className="adjustment-response-table" role="table" aria-label="調整さん回答ログ">
-                <div className="adjustment-response-row adjustment-response-head" role="row">
-                  <div role="columnheader">カウント</div>
-                  <div role="columnheader">希望日</div>
-                  <div role="columnheader">業者</div>
-                  <div role="columnheader">記号</div>
-                </div>
-                {adjustmentResponseRows.map((row) => (
-                  <div className="adjustment-response-row" role="row" key={`${row.candidateId}-${row.memberId}`}>
-                    <span>{row.count}</span>
-                    <span>
-                      {row.candidateLabel}
-                      <small>{row.candidateTime}</small>
-                    </span>
-                    <strong>{row.company}</strong>
-                    <em className={`mark mark-${row.mark}`} title={markText[row.mark]}>
-                      {markLabels[row.mark]}
-                    </em>
-                  </div>
+              <div className="placement-response-log-list">
+                {candidatePlacementList.length === 0 && <p>打設予定はありません。</p>}
+                {candidatePlacementList.map(({ row, activeSchedule, scheduleLabel, scheduleTone }) => (
+                  <details className="placement-response-log" key={row.id}>
+                    <summary>
+                      <span>
+                        <em className={`placement-schedule-badge ${scheduleTone}`}>{scheduleLabel}</em>
+                        <strong>{formatPlacementLocation(row)}</strong>
+                      </span>
+                      <small>
+                        {row.concreteVolume || "-"}m3 / {row.floorArea || "-"}m2
+                        {activeSchedule ? ` / ${scheduleStatusLabels[activeSchedule.status]}` : ""}
+                      </small>
+                    </summary>
+                    <div className="adjustment-response-table" role="table" aria-label={`${formatPlacementLocation(row)} の調整さん回答ログ`}>
+                      <div className="adjustment-response-row adjustment-response-head" role="row">
+                        <div role="columnheader">カウント</div>
+                        <div role="columnheader">希望日</div>
+                        <div role="columnheader">業者</div>
+                        <div role="columnheader">記号</div>
+                      </div>
+                      {adjustmentResponseRows.map((responseRow) => (
+                        <div className="adjustment-response-row" role="row" key={`${row.id}-${responseRow.candidateId}-${responseRow.memberId}`}>
+                          <span>{responseRow.count}</span>
+                          <span>
+                            {responseRow.candidateLabel}
+                            <small>{responseRow.candidateTime}</small>
+                          </span>
+                          <strong>{responseRow.company}</strong>
+                          <em className={`mark mark-${responseRow.mark}`} title={markText[responseRow.mark]}>
+                            {markLabels[responseRow.mark]}
+                          </em>
+                        </div>
+                      ))}
+                    </div>
+                  </details>
                 ))}
               </div>
             </div>

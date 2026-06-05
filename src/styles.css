@@ -2041,11 +2041,81 @@ button:disabled {
   font-size: 15px;
 }
 
+.placement-response-log-list {
+  display: grid;
+  gap: 8px;
+}
+
+.placement-response-log-list > p {
+  margin: 0;
+  color: #687971;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.placement-response-log {
+  border: 1px solid #dce4df;
+  border-radius: 8px;
+  background: #fff;
+  overflow: hidden;
+}
+
+.placement-response-log summary {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 8px;
+  align-items: center;
+  min-height: 46px;
+  padding: 9px 12px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.placement-response-log summary::-webkit-details-marker {
+  display: none;
+}
+
+.placement-response-log summary::after {
+  color: #687971;
+  content: "開く";
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.placement-response-log[open] summary::after {
+  content: "閉じる";
+}
+
+.placement-response-log summary span,
+.placement-response-log summary small {
+  min-width: 0;
+}
+
+.placement-response-log summary strong,
+.placement-response-log summary small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.placement-response-log summary small {
+  color: #687971;
+  font-size: 12px;
+  font-weight: 800;
+}
+
 .adjustment-response-table {
   display: grid;
   overflow: hidden;
   border: 1px solid #dce4df;
   border-radius: 8px;
+}
+
+.placement-response-log .adjustment-response-table {
+  border-right: 0;
+  border-bottom: 0;
+  border-left: 0;
+  border-radius: 0;
 }
 
 .adjustment-response-row {
