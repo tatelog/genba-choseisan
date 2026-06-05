@@ -2585,16 +2585,26 @@ button:disabled {
     align-items: center;
     flex-direction: row;
     justify-content: flex-end;
-    max-width: 300px;
+    flex: 0 0 auto;
+    max-width: none;
   }
 
   .topbar-actions .primary-button,
   .topbar-actions .secondary-button {
     gap: 5px;
-    min-width: 0;
     padding: 0 10px;
     font-size: 13px;
     line-height: 1;
+    flex: 0 0 auto;
+    white-space: nowrap;
+  }
+
+  .topbar-actions .primary-button {
+    min-width: 116px;
+  }
+
+  .topbar-actions .logout-button {
+    min-width: 98px;
   }
 
   .topbar-actions .icon-button {
