@@ -509,6 +509,22 @@ button:disabled {
   font-weight: 700;
 }
 
+.placement-plan-tile .candidate-date-line {
+  margin: 0;
+}
+
+.placement-plan-tile .candidate-date-line strong,
+.placement-plan-tile .candidate-date-line span,
+.placement-plan-tile .candidate-location-line,
+.placement-plan-tile .candidate-quantity-line {
+  display: revert;
+}
+
+.placement-plan-tile .candidate-location-line,
+.placement-plan-tile .candidate-quantity-line {
+  display: block;
+}
+
 .content-grid {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 360px;

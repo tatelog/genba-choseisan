@@ -1449,13 +1449,19 @@ function MainApp({ onLogout }: MainAppProps) {
                     return (
                     <div className={`placement-grid-row ${isRowEditing ? "is-editing" : "is-locked"}`} key={row.id}>
                       <div className="placement-row-summary placement-plan-tile">
-                        <div>
-                          <strong>
-                            <em className={`placement-schedule-badge ${scheduleTone}`}>{scheduleLabel}</em>
-                            {formatPlacementLocation(row)}
-                          </strong>
-                          <span>
-                            {row.concreteVolume || "-"}m3 / {row.floorArea || "-"}m2
+                        <div className="candidate-placement-card-body">
+                          <div className="candidate-date-line">
+                            <span>
+                              希望日：<strong>{activeSchedule?.date ? formatDateKeyShort(activeSchedule.date) : "未設定"}</strong>
+                            </span>
+                            <span>
+                              調整日：<strong>{preferredCandidate?.candidate.label.replace(/\s.+$/, "") ?? "-"}</strong>
+                            </span>
+                            <em className={`placement-schedule-badge ${scheduleTone}`}>{scheduleLabel.replace(/^\S+\s*/, "")}</em>
+                          </div>
+                          <strong className="candidate-location-line">{formatPlacementLocation(row)}</strong>
+                          <span className="candidate-quantity-line">
+                            数量情報：{row.concreteVolume || "-"}m3 / {row.floorArea || "-"}m2
                           </span>
                         </div>
                         <dl className="placement-tile-popover">
